@@ -8,7 +8,7 @@
 #define MAX_STRING_LENGTH 41
 #define BIT_ARRAY_LENGTH 16
 
-char* getBitArray();
+char* getBitArray(unsigned short number);
 
 int main() {
   struct hd_driveid hdd;
@@ -23,7 +23,10 @@ int main() {
     return -1;
   }
 
-  
+  printf("Model:             %22.10s\n", hdd.model);
+  printf("Firmware Revision: %32.20s\n", hdd.fw_rev);
+  printf("Serial Numer:      %.20s\n", hdd.serial_no);
+
 
   return 0;
 }
