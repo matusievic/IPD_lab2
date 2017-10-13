@@ -9,10 +9,13 @@
 #define BIT_ARRAY_LENGTH 16
 
 char* getBitArray(unsigned short number);
+char* getATA(char* ataBits);
+char* getInfoFromBitArray(char* bitArray);
 
 int main() {
   struct hd_driveid hdd;
-  int hddFile;
+  int hddFile, i;
+  char* tempString;
 
   if ((hddFile = open("/dev/sda", O_RDONLY | O_NONBLOCK)) < 0) {  //open HDD information file
       puts("ERROR: Cannot open device file /dev/sda");
@@ -23,14 +26,64 @@ int main() {
     return -1;
   }
 
-  printf("Model:             %22.10s\n", hdd.model);
-  printf("Firmware Revision: %32.20s\n", hdd.fw_rev);
-  printf("Serial Numer:      %.20s\n", hdd.serial_no);
-
+  printf("Model:             %22.10s\n\n", hdd.model);
+  printf("Firmware Revision: %32.20s\n\n", hdd.fw_rev);
+  printf("Serial Numer:      %.20s\n\n", hdd.serial_no);
+  tempString = getATA(getBitArray(hdd.major_rev_num));
+  printf("Supported ATA standards: %16.20s\n\n", tempString);
+  free(tempString);
+  tempString = getInfoFromBitArray(getBitArray(hdd.dma_mword));
+  printf("DMA:\n  mdma: %.20s\n\n", tempString);
+  free(tempString);
+  tempString = getInfoFromBitArray(getBitArray(hdd.dma_ultra));
+  printf("  udma: %.20s\n\n", tempString);
+  free(tempString);
+  tempString = getInfoFromBitArray(getBitArray(hdd.eide_pio_modes));
+  printf("PIO: %.20s\n\n", tempString);
+  free(tempString);
+  printf("Memory: \n");
+  system("lsblk --output SIZE -n -d /dev/sda");
 
   return 0;
 }
 
+
+/**
+* This function conver a bit sequence to a string with supported ATA standarts
+* @return supported ATA standards
+*/
+char* getATA(char* ataBits) {
+  int i, j = 0;
+  char* ataStandards = (char*) malloc(MAX_STRING_LENGTH);
+  for (i = 4; i < BIT_ARRAY_LENGTH; i++) {
+    if (ataBits[i] == 1) {
+      ataStandards[j++] = i + '0';
+      ataStandards[j++] = ' ';
+    }
+  }
+  ataStandards[j] = '\0';
+  free(ataBits);
+  return (char*) ataStandards;
+}
+
+
+/**
+* This function convert a bit sequence to a string. Used for DMA and PIO
+* @return a string with supported DMA or PIO
+*/
+char* getInfoFromBitArray(char* bitArray) {
+  char* info = (char*) malloc(MAX_STRING_LENGTH);
+  int i, j = 0;
+  for (i = 0; i < 8; i++) {
+    if (bitArray[i]) {
+      info[j++] = i + '0';
+      info[j++] = ' ';
+    }
+  }
+  free(bitArray);
+  info[j] = '\0';
+  return (char*) info;
+}
 
 /**
 * This function represents an input number in binary format
@@ -41,7 +94,7 @@ char* getBitArray(unsigned short number) {
   int i;
   for (i = 0; i < BIT_ARRAY_LENGTH; i++) {
     int denominator = pow(2, BIT_ARRAY_LENGTH - 1 - i);
-    bitArray[i] = number / denominator;
+    bitArray[BIT_ARRAY_LENGTH - 1 - i] = number / denominator;
     number %= denominator;
   }
   return bitArray;
