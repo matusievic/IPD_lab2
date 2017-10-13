@@ -41,8 +41,12 @@ int main() {
   tempString = getInfoFromBitArray(getBitArray(hdd.eide_pio_modes));
   printf("PIO: %.20s\n\n", tempString);
   free(tempString);
-  printf("Memory: \n");
-  system("lsblk --output SIZE -n -d /dev/sda");
+  printf("Memory (GB): \n\ntotal:\n");
+  system("df | grep '^/dev/[hs]d' | awk '{s+=$2} END {print s/1048576}'");
+  printf("\nfree:\n");
+  system("df | grep '^/dev/[hs]d' | awk '{s+=$3} END {print s/1048576}'");
+  printf("\navailable:\n");
+  system("df | grep '^/dev/[hs]d' | awk '{s+=$4} END {print s/1048576}'");
 
   return 0;
 }
